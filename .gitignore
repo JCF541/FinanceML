@@ -1,0 +1,103 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.venv/
+.env/
+env/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Jupyter Notebooks checkpoints
+.ipynb_checkpoints/
+
+# Scrapy
+.scrapy/
+
+# Log files
+*.log
+logs/
+debug.log
+scrapy.log
+nohup.out
+
+# SQLite database
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+
+# PostgreSQL database dumps
+*.pgsql
+*.pgdump
+*.sql
+*.csv
+
+# Environment variables / API keys
+config.yml
+secrets.yaml
+.env
+
+# Flask cache and sessions
+instance/
+*.pid
+*.sock
+
+# Python virtual environment package list
+requirements.txt
+
+# Compiled C extensions
+*.so
+
+# macOS-specific files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows-specific files
+Thumbs.db
+ehthumbs.db
+*.stackdump
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# pytest & coverage
+.coverage
+.tox/
+.nox/
+.pytest_cache/
+htmlcov/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+MANIFEST
+
+# MyPy
+.mypy_cache/
+
+# PyCharm project files
+*.pyc
+*.pyo
+*.pyd
+
+# Generated Binance API data
+binance_*.csv
+
+# OpenAI analysis logs (if applicable)
+openai_analysis_*.json
+
+# Flask session data
+instance/
+
+# Ignore personal scripts or tests
+scripts/
+notebooks/
