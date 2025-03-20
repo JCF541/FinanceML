@@ -45,22 +45,6 @@ Overseer v.0.0.1
 
 ---
 
-## 🗓️ **Estimated Overall Timeline**
-
-- Total Project Timeline for MVP: **~6 weeks**
-  - Sprint length: **2 weeks each** (standard Agile duration)
-  - Daily standups, weekly retrospectives, demo after each sprint.
-
----
-
-## ✅ **Next Immediate Steps**
-
-1. **Sprint Planning meeting**: Detail tickets for Sprint 1 clearly, confirm expectations.
-2. **Environment Setup & Onboarding**: Tools, API keys, environments.
-3. **Start development immediately** with tickets from Sprint 1.
-
----
-
 ## 🚀 **Scalability Post-MVP**
 
 Once MVP validation is complete, potential enhancements:
