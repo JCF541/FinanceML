@@ -1,8 +1,14 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import logging
 from src.scraping.scrape_data import fetch_binance_historical_data
 from src.data.models.agent import BullishAgent, BearishAgent
+
+# Configure logging if not already configured elsewhere.
+logging.basicConfig(level=logging.INFO, 
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 class Backtester:
     def __init__(self, trading_strategy, start_date, end_date, initial_balance=10000, trading_fee=0.001):
@@ -15,29 +21,48 @@ class Backtester:
         self.trades = []
 
     def load_data(self, symbol="BTCUSDT", interval="1d"):
-        self.df = fetch_binance_historical_data(symbol=symbol, interval=interval, lookback="365 days ago UTC")
-        self.df.set_index("date", inplace=True)
+        try:
+            self.df = fetch_binance_historical_data(symbol=symbol, interval=interval, lookback="365 days ago UTC")
+            self.df.set_index("date", inplace=True)
+            logger.info("Binance market data loaded successfully.")
+        except Exception as e:
+            logger.error(f"Error loading market data: {e}")
+            raise
 
     def apply_sentiment_analysis(self, articles):
+        # Instantiate analysis agents for the provided articles.
         bullish_agent = BullishAgent(articles)
         bearish_agent = BearishAgent(articles)
 
+        # Run analysis. For empty article list, these agents should return empty DataFrames.
         bull_df = bullish_agent.analyze()
         bear_df = bearish_agent.analyze()
 
-        # Debugging steps (helpful for verifying merge correctness)
-        print(bull_df.head())
-        print(bear_df.head())
+        # Debug prints for verification.
+        logger.info("Bullish analysis result:")
+        logger.info(bull_df.head())
+        logger.info("Bearish analysis result:")
+        logger.info(bear_df.head())
 
-        # Ensure date_parsed exists and correctly maps sentiment to prices
-        self.df["bullish_signal"] = self.df.index.map(
-            lambda d: bull_df.loc[bull_df["date_parsed"] == d, "bullish_signal"].any()
-            if d in bull_df["date_parsed"].values else False
-        )
-        self.df["bearish_signal"] = self.df.index.map(
-            lambda d: bear_df.loc[bear_df["date_parsed"] == d, "bearish_signal"].any()
-            if d in bear_df["date_parsed"].values else False
-        )
+        # If bull_df is empty or does not contain expected columns, assign default signals.
+        if bull_df.empty or "date_parsed" not in bull_df.columns or "bullish_signal" not in bull_df.columns:
+            logger.info("No bullish analysis data available; assigning default False to bullish_signal.")
+            self.df["bullish_signal"] = False
+        else:
+            self.df["bullish_signal"] = self.df.index.map(
+                lambda d: bull_df.loc[bull_df["date_parsed"] == d, "bullish_signal"].any()
+                if d in bull_df["date_parsed"].values else False
+            )
+
+        # Similarly, if bear_df is empty or missing expected columns, assign default signals.
+        if bear_df.empty or "date_parsed" not in bear_df.columns or "bearish_signal" not in bear_df.columns:
+            logger.info("No bearish analysis data available; assigning default False to bearish_signal.")
+            self.df["bearish_signal"] = False
+        else:
+            self.df["bearish_signal"] = self.df.index.map(
+                lambda d: bear_df.loc[bear_df["date_parsed"] == d, "bearish_signal"].any()
+                if d in bear_df["date_parsed"].values else False
+            )
 
     def execute_strategy(self):
         balance = self.initial_balance
@@ -45,23 +70,29 @@ class Backtester:
 
         for i in range(1, len(self.df)):
             current_price = self.df.iloc[i]["close"]
+            date = self.df.index[i]
 
-            if self.df.iloc[i]["bullish_signal"] and balance > 0:
-                amount = (balance * (1 - self.trading_fee)) / current_price
-                position += amount
-                balance = 0
-                self.trades.append({
-                    "date": self.df.index[i], "action": "BUY", "price": current_price, "amount": amount
-                })
-
-            elif self.df.iloc[i]["bearish_signal"] and position > 0:
-                balance += position * current_price * (1 - self.trading_fee)
-                self.trades.append({
-                    "date": self.df.index[i], "action": "SELL", "price": current_price, "amount": position
-                })
-                position = 0
+            try:
+                if self.df.iloc[i]["bullish_signal"] and balance > 0:
+                    amount = (balance * (1 - self.trading_fee)) / current_price
+                    position += amount
+                    balance = 0
+                    self.trades.append({
+                        "date": date, "action": "BUY", "price": current_price, "amount": amount
+                    })
+                    logger.info(f"Executed BUY on {date} for {amount:.4f} BTC")
+                elif self.df.iloc[i]["bearish_signal"] and position > 0:
+                    balance += position * current_price * (1 - self.trading_fee)
+                    self.trades.append({
+                        "date": date, "action": "SELL", "price": current_price, "amount": position
+                    })
+                    logger.info(f"Executed SELL on {date} for {position:.4f} BTC")
+                    position = 0
+            except Exception as e:
+                logger.error(f"Error during strategy execution on {date}: {e}")
 
         final_value = balance + (position * self.df.iloc[-1]["close"])
+        logger.info(f"Final portfolio value: ${final_value:.2f}")
         return final_value
 
     def plot_results(self):
